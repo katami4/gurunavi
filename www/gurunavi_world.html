@@ -1,0 +1,119 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src * data: gap: content: https://ssl.gstatic.com; style-src * 'unsafe-inline'; script-src * 'unsafe-inline' 'unsafe-eval'">
+    <script src="components/loader.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+    <link rel="stylesheet" href="components/loader.css">
+    <link rel="stylesheet" href="css/style.css">
+
+    <script>
+        var freeword = "";
+        var lang = "";
+        var latitude = "";
+        var longitude = "";
+        var lat = "";
+        var lon = "";
+        // window.sessionStorage.setItem(['i'],['1']);
+        function serch_name() {
+            freeword = $('#name').val();
+            lang = $("#language").val();
+            $.ajax({
+                url: 'http://takehito.azurewebsites.net/gurunavi/get_restrant_name.php?freeword=' + freeword + '&lang=' + lang,
+                type: 'GET',
+                dataType: 'json'
+            }).done(function (data) { //ajaxの通信に成功した場合
+                // console.log(data);
+                var total_count = data.total_hit_count;
+                var hit_page = data.hit_per_page;
+                var total_page = Math.floor(total_count / hit_page);
+                alert(total_page);
+                $("#kekka").html("");
+                var kekka_html = "";
+                $("#kekka").html("<tr><td>店舗名</td><td>お店のイメージ画像</td><td>住所</td><td>営業時間</td><td>電話番号</td><td>最寄り駅</td><td>公式サイト</td><td>地図での案内</td></tr>");
+                for (var i = 0; i < total_page; i++) {
+                    search_restrant_page(freeword, i);
+                }
+            }).fail(function (data) { //ajaxの通信に失敗した場合f
+                alert("データの受信に失敗しました");
+            });
+        }
+        function search_restrant_page(freeword, offset_page) {
+            lang = $("#language").val();
+            $.ajax({
+                url: 'http://takehito.azurewebsites.net/gurunavi/get_restrant_page_word.php?freeword=' + freeword + '&offset_page=' + offset_page + '&lang=' + lang,
+                type: 'GET',
+                dataType: 'json'
+            }).done(function (data) { //ajaxの通信に成功した場合
+                console.log(data);
+                // console.log(Object.keys(data.rest).length);
+                var hit_count = Object.keys(data.rest).length;
+                // console.log("健人" + hit_count);
+                var kekka_html = "";
+                for (var i = 0; i < hit_count; i++) {
+                    kekka_html += "<tr>";
+                    kekka_html += "<td>" + data.rest[i].name.name + "</td>";
+                    kekka_html += "<td><img src=" + data.rest[i].image_url.thumbnail + " alt=イメージ画像がありませんでした> </td>";
+                    kekka_html += "<td>" + data.rest[i].contacts.address + "</td>";
+                    kekka_html += "<td>" + data.rest[i].business_hour + "</td>";
+                    kekka_html += "<td>" + data.rest[i].contacts.tel + "</td>";
+                    kekka_html += "<td>" + data.rest[i].access + "</td>";
+                    kekka_html += "<td>" + '<a href=' + data.rest[i].url + ' target=_blank>公式サイトはこちら</a>' + "</td>";
+                    kekka_html += "<td>" + "<input type='submit'id='map' value='地図の表示' simei='" + data.rest[i].name.name + "'lon='" + data.rest[i].location.longitude + "'lat='" + data.rest[i].location.latitude + "'>" + "</td>";
+                    kekka_html += "</tr>";
+                }
+                $("#kekka").append(kekka_html);
+            }).fail(function (data) { //ajaxの通信に失敗した場合
+                alert("データの受信に失敗しました");
+            });
+        }
+        function show_map(lat,lon,name) {
+            $.cookie("name",name,{path:"/"});
+            $.cookie("lat",lat,{path:"/"});
+            $.cookie("lon",lon,{path:"/"});
+             window.location.href = 'showmap.html';
+        }
+        $(function () {
+            $("#submit").on("click", function () {
+                serch_name();
+                $(document).on("click", "#map", function () {
+                    // $(this).find("option:selected").attr("lat");
+                    lat = $(this).attr("lat");
+                    lon = $(this).attr("lon");
+                    name=$(this).attr("simei");
+                    // console.log(longitude);
+                    // alert(lat);
+                    // alert(lon);
+                    show_map(lat,lon,name);
+                })
+            })
+        })
+        
+    </script>
+</head>
+
+<body>
+    <p>
+        言語の選択
+        <select id="language">
+            <option value="ja">日本語</option>
+            <option value="zh_cn">中国語 </option>
+            <option value="ko">韓国語</option>
+            <option value="en">英語</option>
+        </select>
+    </p>
+    <p>
+        <!--<input type="radio" name="select" id="select">-->
+        項目入力
+        <input type="text" name="name" id="name">
+    </p>
+
+    <input type="submit" id="submit" value="検索">
+    <table id="kekka" border="1"></table>
+</body>
+
+
+</html>

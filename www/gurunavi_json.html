@@ -1,0 +1,237 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src * data: gap: content: https://ssl.gstatic.com; style-src * 'unsafe-inline'; script-src * 'unsafe-inline' 'unsafe-eval'">
+    <script src="components/loader.js"></script>
+    <link rel="stylesheet" href="components/loader.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+
+    </style>
+    <script>
+        var page = "";
+        //都道府県のリストをセットするfunction
+        function set_pref_list()
+        {
+            $.ajax(
+                {
+                    url: 'http://takehito.azurewebsites.net/gurunavi/get_pref.php',
+                    type: 'GET',
+                    dataType: 'json'
+                })
+                .done(function(data)
+                { //ajaxの通信に成功した場合
+                    alert("★");
+                    console.log(data);
+                    //連想配列の長さを得る Object.keysメソッド
+                    // console.log(Object.keys(data.pref).length);
+                    var pref_length = Object.keys(data.pref)
+                        .length;
+                    for (var i = 0; i < pref_length; i++)
+                    {
+                        $('#pref')
+                            .append("<option area_code='" + data.pref[i].area_code + "' pref_code='" + data.pref[i].pref_code + "'>" + data.pref[i].pref_name + "</option>")
+                    }
+                })
+                .fail(function(data)
+                { //ajaxの通信に失敗した場合
+                    alert("データの受信に失敗しました");
+                });
+        }
+        //エリアMのリストをセットするfunction
+        function set_area_list()
+        {
+            $.ajax(
+                {
+                    url: 'http://takehito.azurewebsites.net/gurunavi/get_area.php',
+                    type: 'GET',
+                    dataType: 'json'
+                })
+                .done(function(data)
+                { //ajaxの通信に成功した場合
+                    // console.log(data);
+                    //取得したデータからフィルタリングをかける
+                    //選択された都道府県の状況によってフィルタリングする 
+                    // console.log(Object.keys(data.garea_middle).length);
+                    // var area_l = Object.keys(data.garea_middle).length;
+                    // // var ken = $("#pref").val();
+                    //効率が悪い(俺の考え)
+                    // for (var i = 0; i < area_l; i++) {
+                    //     if (data.garea_middle[i].pref.pref_name == ken) {
+                    //         $("#area_m").append("<option areacode_m=" + data.garea_middle[i].areacode_m + ">" + data.garea_middle[i].areaname_m + "</option>");
+                    //     }
+                    // }
+                    var pref_code = $('#pref')
+                        .find('option:selected')
+                        .attr('pref_code');
+                    $("#area_m")
+                        .text("");
+                    var filterdata = [];
+                    filterdata = $.grep(data.garea_middle, function(item)
+                        {
+                            return item.pref.pref_code == pref_code;
+                        })
+                        // console.log(filterdata);
+                    var area_length = Object.keys(filterdata)
+                        .length;
+                    // console.log(area_length);
+                    for (var i = 0; i < area_length; i++)
+                    {
+                        $("#area_m")
+                            .append("<option areacode_m=" + filterdata[i].areacode_m + ">" + filterdata[i].areaname_m + "</option>");
+                    }
+                })
+                .fail(function(data)
+                { //ajaxの通信に失敗した場合f
+                    alert("データの受信に失敗しました");
+                });
+        }
+        //業態（カテゴリL)のリストをセットするfunction
+        function set_category_l_list()
+        {
+            $.ajax(
+                {
+                    url: 'http://takehito.azurewebsites.net/gurunavi/get_category_l.php',
+                    type: 'GET',
+                    dataType: 'json'
+                })
+                .done(function(data)
+                { //ajaxの通信に成功した場合
+                    // console.log(data);
+                    // console.log(Object.keys(data.category_l).length);
+                    var category_l = Object.keys(data.category_l)
+                        .length;
+                    for (var i = 0; i < category_l; i++)
+                    {
+                        $("#category_l")
+                            .append("<option category_l_code=" + data.category_l[i].category_l_code + ">" + data.category_l[i].category_l_name + "</option>");
+                    }
+                })
+                .fail(function(data)
+                { //ajaxの通信に失敗した場合
+                    alert("データの受信に失敗しました");
+                });
+        }
+
+        function search_restrant(pref_code, areacode_m, category_l_code)
+        {
+            //条件に一致するレストランの件数を検索する
+            $.ajax(
+                {
+                    url: 'http://takehito.azurewebsites.net/gurunavi/get_restrant.php?pref=' + pref_code + '&areacode_m=' + areacode_m + '&category_l=' + category_l_code,
+                    type: 'GET',
+                    dataType: 'json'
+                })
+                .done(function(data)
+                { //ajaxの通信に成功した場合
+                    console.log(data);
+                    var total_count = data.total_hit_count;
+                    var hit_page = data.hit_per_page;
+                    var total_page = Math.floor(total_count / hit_page);
+                    console.log(total_count);
+                    console.log(hit_page);
+                    console.log(total_page);
+                    // $("#kekka").text("");
+                    $("#kekka")
+                        .html("<tr><td>店舗名</td><td>お店のイメージ画像</td><td>住所</td><td>電話番号</td><td>最寄り駅</td></tr>");
+                    for (var i = 0; i < total_page; i++)
+                    {
+                        search_restrant_page(pref_code, areacode_m, category_l_code, i);
+                    }
+                })
+                .fail(function(data)
+                { //ajaxの通信に失敗した場合
+                    alert("データの受信に失敗しました");
+                });
+        }
+
+        function search_restrant_page(pref_code, areacode_m, category_l_code, offset_page)
+        {
+            $.ajax(
+                {
+                    url: 'http://takehito.azurewebsites.net/gurunavi/get_restrant_page.php?pref=' + pref_code + '&areacode_m=' + areacode_m + '&category_l=' + category_l_code + '&offset_page=' + offset_page,
+                    type: 'GET',
+                    dataType: 'json'
+                })
+                .done(function(data)
+                { //ajaxの通信に成功した場合
+                    console.log(Object.keys(data.rest)
+                        .length);
+                    var hit_count = Object.keys(data.rest)
+                        .length;
+                    // console.log("健人" + hit_count);
+                    var kekka_html = "";
+                    var img = "";
+                    for (var i = 0; i < hit_count; i++)
+                    {
+                        img = data.rest[i].image_url.shop_image1;
+                        console.log(img);
+                        // if () {
+                        kekka_html += "<tr>";
+                        kekka_html += "<td>" + data.rest[i].name + "</td>";
+                        kekka_html += "<td><img src=" + img + " alt=イメージ画像がありませんでした> </td>";
+                        kekka_html += "<td>" + data.rest[i].address + "</td>";
+                        kekka_html += "<td>" + data.rest[i].tel + "</td>";
+                        kekka_html += "<td>" + data.rest[i].access.station + "</td>";
+                        kekka_html += "</tr>";
+                        // }
+                        // else {
+                        //     kekka_html += "<tr>";
+                        //     kekka_html += "<td>" + data.rest[i].name + "</td>";
+                        //     kekka_html += "<td><img src=" + img + " alt=イメージ画像がありませんでした> </td>";
+                        //     kekka_html += "<td>" + data.rest[i].address + "</td>";
+                        //     kekka_html += "<td>" + data.rest[i].tel + "</td>";
+                        //     kekka_html += "<td>最寄りに駅がありません </td>";
+                        //     kekka_html += "</tr>";
+                        // }
+                    }
+                    $("#kekka")
+                        .append(kekka_html);
+                })
+                .fail(function(data)
+                { //ajaxの通信に失敗した場合
+                    alert("データの受信に失敗しました");
+                });
+        }
+        $(function()
+        { //←document.ready
+            //■ページを読み込んだらすぐ行う
+            //エリアを表示する
+            set_pref_list();
+            //業態を表示する
+            set_category_l_list();
+            //■イベントの割り当て
+            $('#pref')
+                .on('change', function()
+                {
+                    set_area_list();
+                })
+            $('#search')
+                .on('click', function()
+                {
+                    //レストラン検索を行う
+                    var pref_code = $("#pref")
+                        .find('option:selected')
+                        .attr('pref_code');
+                    var areacode_m = $("#area_m")
+                        .find('option:selected')
+                        .attr('areacode_m');
+                    var category_l_code = $("#category_l")
+                        .find('option:selected')
+                        .attr('category_l_code');
+                    search_restrant(pref_code, areacode_m, category_l_code);
+                })
+        });
+    </script>
+</head>
+
+<body>
+    <h1>グルメ情報検索</h1> <select id="pref"></select> <select id="area_m"></select> <select id="category_l"></select> <input type="button" id="search" value="検索">
+    <h3>ここに検索結果を表示します</h3>
+    <table id="kekka" border="1"></table>
+</body>
+
+</html>

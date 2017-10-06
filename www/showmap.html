@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src * data: gap: content: https://ssl.gstatic.com; style-src * 'unsafe-inline'; script-src * 'unsafe-inline' 'unsafe-eval'">
+    <script src="components/loader.js"></script>
+    <link rel="stylesheet" href="components/loader.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="http://maps.googleapis.com/maps/api/js?key=AIzaSyA6SX2U2UJCeTYgg8UOu6QOR0sCNAUm9G8"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+    <script>
+        var name = "";
+        var lat = "";
+        var lon = "";
+
+        //マップ表示のロジック
+        function showMap(name,lat,lon) {
+            console.log(lat);
+            console.log(lon);
+            console.log(name);
+            var latlng = new google.maps.LatLng(lat, lon);  //表示する地図の座標を指定する
+            var opts = {
+                zoom: 18, //倍率
+                center: latlng,	//地図の中心
+                // mapTypeId: google.maps.MapTypeId.ROAD,  		//マップタイプの指定
+                // mapTypeId: google.maps.MapTypeId.HYBRID,  		//マップタイプの指定
+                mapTypeId: google.maps.MapTypeId.SATELLITE,  	//マップタイプの指定
+                //mapTypeId: google.maps.MapTypeId.TERRAIN,  		//マップタイプの指定
+                mapTypeControl: false
+            }
+            //地図を表示する
+            var map = new google.maps.Map($("#map_canvas").get(0), opts);
+
+            //マーカの座標を決める
+            var myLatlng = new google.maps.LatLng(lat, lon);
+            //マーカを表示する
+            var marker = new google.maps.Marker({
+                position: myLatlng,
+                map: map,
+                title: name,
+            });
+            //吹き出しを設定
+            var contentString = "<p> " + name + "</p>";
+            //吹き出しを表示
+            var infowindow = new google.maps.InfoWindow({
+                content: contentString
+            });
+            //マーカと紐付ける
+            google.maps.event.addListener(marker, 'click', function () {
+                infowindow.open(map, marker);
+            })
+        };
+        $(function () {
+            name = $.cookie("name");
+            lat = $.cookie("lat");
+            lon = $.cookie("lon");
+            showMap(name,lat,lon);
+        });
+    </script>
+</head>
+
+<body>
+    <div id="map_canvas" style="width:1000px; height:1000px"></div>
+</body>
+
+</html>
